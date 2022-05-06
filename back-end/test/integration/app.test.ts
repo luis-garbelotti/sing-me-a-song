@@ -57,5 +57,26 @@ describe('Sing me a song Integrations tests', () => {
       expect(postResponse.status).toEqual(200);
       expect(getResponse.body.score).toEqual(recommendations.score - 1);
     });
+
+    it('should delete recommendation when score < -5 and return status 200', async () => {
+      const recommendations = recommendationsFactory();
+
+      const createdRecommendation = await prisma.recommendation.upsert({
+        where: {
+          name: recommendations.name,
+        },
+        update: {},
+        create: {
+          ...recommendations,
+          score: -5,
+        },
+      });
+
+      const postResponse = await supertest(app).post(`/recommendations/${createdRecommendation.id}/downvote`);
+      const getResponse = await supertest(app).get(`/recommendations/${createdRecommendation.id}`);
+
+      expect(postResponse.status).toEqual(200);
+      expect(getResponse.body).toEqual({});
+    });
   });
 });
