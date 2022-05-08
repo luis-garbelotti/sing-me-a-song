@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import supertest from 'supertest';
 import app from '../../src/app.js';
 import { prisma } from '../../src/database.js';
@@ -82,7 +83,7 @@ describe('Sing me a song Integrations tests', () => {
   });
 
   describe('GET /recommendations', () => {
-    it('should return an array with lenght less or equal 10', async () => {
+    it('should return status 200 and an array with lenght less or equal 10', async () => {
       const recommendations = recommendationsFactory();
 
       await prisma.recommendation.createMany({
@@ -93,11 +94,12 @@ describe('Sing me a song Integrations tests', () => {
 
       expect(lastTenRecommendations.status).toEqual(200);
       expect(lastTenRecommendations.body.length).toBeLessThan(11);
+      expect(lastTenRecommendations.body.length).toBeGreaterThan(0);
     });
   });
 
   describe('GET /recommendations/:id', () => {
-    it('should return a recommendation whith id equal path id', async () => {
+    it('should return status 200 and a recommendation whith id equal path id', async () => {
       const recommendations = recommendationsFactory();
 
       const createdRecommendation = await prisma.recommendation.upsert({
@@ -116,6 +118,34 @@ describe('Sing me a song Integrations tests', () => {
 
       expect(selectedRecommendation.status).toEqual(200);
       expect(selectedRecommendation.body.id).toEqual(createdRecommendation.id);
+    });
+  });
+
+  describe('GET /recommendations/top/:amount', () => {
+    it('should return status 200 and an array with the amount most voted recommendation', async () => {
+      const recommendations = recommendationsFactory();
+      const amount = Math.floor(Math.random() * 19);
+      let isOrdered = true;
+
+      await prisma.recommendation.createMany({
+        data: [...recommendations],
+      });
+
+      const selectedRecommendation = await supertest(app).get(`/recommendations/top/${amount}`);
+
+      for (let i = 0; i < selectedRecommendation.body.lenght; i++) {
+        if (i === selectedRecommendation.body.lenght - 1) {
+          return;
+        }
+
+        if (selectedRecommendation.body[i] < selectedRecommendation.body[i + 1]) {
+          isOrdered = false;
+        }
+      }
+
+      expect(selectedRecommendation.status).toEqual(200);
+      expect(isOrdered).toEqual(true);
+      expect(selectedRecommendation.body.length).toBeLessThanOrEqual(amount);
     });
   });
 });
