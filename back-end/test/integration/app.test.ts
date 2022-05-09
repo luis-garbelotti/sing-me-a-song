@@ -16,6 +16,37 @@ describe('Sing me a song Integrations tests', () => {
   beforeEach(truncateRecommendations);
   afterAll(disconnect);
 
+  describe('POST /recommendations', () => {
+    it('should return status 422 given an invalid schema: invalid name', async () => {
+      const recommendationEmptyName = {
+        name: '',
+        youtubeLink: 'https://www.youtube.com/watch?v=CMtGsrID-qM&ab_channel=InFlames-Topic',
+      };
+
+      const createdRecommendation = await supertest(app).post('/recommendations').send(recommendationEmptyName);
+
+      expect(createdRecommendation.status).toEqual(422);
+    });
+
+    it('should return status 422 given an invalid schema: invalid youtube link', async () => {
+      const recommendationEmptyLink = {
+        name: 'Molejo - Dança da Vassoura',
+        youtubeLink: '',
+      };
+
+      const recommendationInvalidLink = {
+        name: 'Lamb of God - Laid to Rest (Official HD Video)',
+        youtubeLink: 'https://google.com',
+      };
+
+      const createdRecommendationEmptyLink = await supertest(app).post('/recommendations').send(recommendationEmptyLink);
+      const createdRecommendationInvalidLink = await supertest(app).post('/recommendations').send(recommendationInvalidLink);
+
+      expect(createdRecommendationEmptyLink.status).toEqual(422);
+      expect(createdRecommendationInvalidLink.status).toEqual(422);
+    });
+  });
+
   describe('Up vote: POST /recommendations/:id/upvote', () => {
     it('should increase a vote when up vote and return status 200', async () => {
       const recommendations = recommendationsFactory();
