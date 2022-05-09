@@ -8,6 +8,7 @@ export default {
       useESM: true,
     },
   },
+  collectCoverage: true,
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
