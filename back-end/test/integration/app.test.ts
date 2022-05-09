@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 import supertest from 'supertest';
+import { jest } from "@jest/globals";
 import app from '../../src/app.js';
 import { prisma } from '../../src/database.js';
 import recommendationsFactory from '../factories/recommendationsFactory.js';
@@ -17,6 +18,19 @@ describe('Sing me a song Integrations tests', () => {
   afterAll(disconnect);
 
   describe('POST /recommendations', () => {
+    it('should return status 200 and create and persist a recommendation', async () => {
+      const recommendation = {
+        name: 'Turma do Pagode - Camisa 10 (Ao vivo)',
+        youtubeLink: 'https://www.youtube.com/watch?v=oZgYN4qfpl4&ab_channel=TurmadoPagodeVEVO',
+      };
+
+      const postRecommendation = await supertest(app).post('/recommendations').send(recommendation);
+      const createdRecommendation = await supertest(app).get('/recommendations');
+
+      expect(postRecommendation.status).toEqual(201);
+      expect(createdRecommendation.body[0].name).toEqual(recommendation.name);
+    });
+
     it('should return status 422 given an invalid schema: invalid name', async () => {
       const recommendationEmptyName = {
         name: '',
@@ -181,19 +195,51 @@ describe('Sing me a song Integrations tests', () => {
   });
 
   describe('GET /recommendations/random', () => {
-    it('should return status 200 and a random recommendation', async () => {
+    it('should return status 200 and a random recommendation with score greater than 10', async () => {
       const recommendations = recommendationsFactory();
 
       await prisma.recommendation.createMany({
         data: [...recommendations],
       });
 
+      jest.spyOn(global.Math, 'random').mockReturnValue(0.5);
+
       const randomRecommendation = await supertest(app).get('/recommendations/random');
 
+      expect(randomRecommendation.body.score).toBeGreaterThan(10);
       expect(randomRecommendation.status).toEqual(200);
-      expect(randomRecommendation.body).toHaveProperty('youtubeLink');
-      expect(randomRecommendation.body).toHaveProperty('name');
-      expect(randomRecommendation.body).toHaveProperty('score');
+    });
+
+    it('should return status 200 and a random recommendation with score greater than 10', async () => {
+      const recommendations = recommendationsFactory();
+
+      await prisma.recommendation.createMany({
+        data: [...recommendations],
+      });
+
+      jest.spyOn(global.Math, 'random').mockReturnValue(0.9);
+
+      const randomRecommendation = await supertest(app).get('/recommendations/random');
+
+      expect(randomRecommendation.body.score).toBeLessThanOrEqual(10);
+      expect(randomRecommendation.status).toEqual(200);
     });
   });
 });
+
+/* describe('GET /recommendations/random', () => {
+  it('should return status 200 and a random recommendation', async () => {
+    const recommendations = recommendationsFactory();
+
+    await prisma.recommendation.createMany({
+      data: [...recommendations],
+    });
+
+    const randomRecommendation = await supertest(app).get('/recommendations/random');
+
+    expect(randomRecommendation.status).toEqual(200);
+    expect(randomRecommendation.body).toHaveProperty('youtubeLink');
+    expect(randomRecommendation.body).toHaveProperty('name');
+    expect(randomRecommendation.body).toHaveProperty('score');
+  });
+}); */
