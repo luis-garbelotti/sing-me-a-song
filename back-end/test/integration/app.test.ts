@@ -226,20 +226,3 @@ describe('Sing me a song Integrations tests', () => {
     });
   });
 });
-
-/* describe('GET /recommendations/random', () => {
-  it('should return status 200 and a random recommendation', async () => {
-    const recommendations = recommendationsFactory();
-
-    await prisma.recommendation.createMany({
-      data: [...recommendations],
-    });
-
-    const randomRecommendation = await supertest(app).get('/recommendations/random');
-
-    expect(randomRecommendation.status).toEqual(200);
-    expect(randomRecommendation.body).toHaveProperty('youtubeLink');
-    expect(randomRecommendation.body).toHaveProperty('name');
-    expect(randomRecommendation.body).toHaveProperty('score');
-  });
-}); */
